@@ -9,12 +9,12 @@ function correctCacheNameSuffix(toolPath : string, newSuffix:string) : string {
     return path.join(directory, newSuffix);
 }
 
-async function findExistingNugetOrDownload() : Promise<string> {
+async function findExistingNugetOrDownload() : Promise< { directory: string; completePath: string; }> {
   const pathToCachedNuGet = tc.find("nuget", "latest")
 
   if (pathToCachedNuGet) {
     core.debug(`Found a previously cached nuget at ${pathToCachedNuGet}`);
-    return pathToCachedNuGet;
+    return { directory: pathToCachedNuGet, completePath: path.join(pathToCachedNuGet, "nuget.exe") };
   }
 
   core.debug("Downloading Nuget tool");
@@ -28,13 +28,16 @@ async function findExistingNugetOrDownload() : Promise<string> {
   var cachedToolDir = await tc.cacheDir(correctedPathDirectory, "nuget", "latest");
   core.debug(`cached nuget.exe in tool dir ${cachedToolDir}`);
 
-  return cachedToolDir;
+  return { directory: cachedToolDir, completePath: path.join(pathToCachedNuGet, "nuget.exe") };
 }
 
 async function run() {
   try {
-    const toolDirectory = await findExistingNugetOrDownload();
-    core.addPath(toolDirectory);
+    const tool = await findExistingNugetOrDownload();
+    core.addPath(tool.directory);
+
+    // Copy it to current directory for easy access.
+    fs.copyFileSync(tool.completePath, "nuget.exe");
   } catch (error) {
     core.setFailed(error.message);
   }
