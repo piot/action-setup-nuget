@@ -38,8 +38,13 @@ async function run() {
     const tool = await findExistingNugetOrDownload();
     core.addPath(tool.directory);
 
+    const localPath = "nuget.exe";
+
     // Copy it to current directory for easy access.
-    fs.copyFileSync(tool.completePath, "nuget.exe");
+    fs.copyFileSync(tool.completePath, localPath);
+    
+    fs.chmodSync(localPath, 0o775);
+
   } catch (error) {
     core.setFailed(error.message);
   }
